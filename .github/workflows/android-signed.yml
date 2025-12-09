@@ -28,8 +28,7 @@ jobs:
 
       # 4️⃣ فك keystore من Secret
       - name: Decode keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android.keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android.keystore
 
       # 5️⃣ إنشاء ملف signing.properties (اختياري لكن يساعد Gradle)
       - name: Create signing properties
@@ -39,13 +38,14 @@ jobs:
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> keystore.properties
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> keystore.properties
 
-      # 6️⃣ بناء Signed Release APK
+      # 6️⃣ Build Signed Release APK (بدون مسافات خاطئة)
       - name: Build Signed APK
-        run: ./gradlew assembleRelease \
-          -Pandroid.injected.signing.store.file=android.keystore \
-          -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
-          -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
-          -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=android.keystore \
+            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
+            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
+            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
 
       # 7️⃣ التحقق من الملفات الناتجة
       - name: List APK folder
