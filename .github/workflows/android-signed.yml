@@ -26,9 +26,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      # 4️⃣ Create keystore in app/ folder (مسار صحيح لـ Gradle)
+      # 4️⃣ Decode keystore مباشرة داخل مجلد app/ (المسار الصحيح)
       - name: Decode keystore
-        run: mkdir -p app && echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/android.keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/android.keystore
 
       # 5️⃣ Build Signed APK
       - name: Build Signed APK
