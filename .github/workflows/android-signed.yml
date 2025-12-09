@@ -1,0 +1,60 @@
+name: Build Signed Android APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ استنساخ المشروع
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ إعداد JDK 17
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      # 3️⃣ إعطاء صلاحية تنفيذ gradlew
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      # 4️⃣ استرجاع keystore من Secret
+      - name: Decode keystore
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android.keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      # 5️⃣ إعداد signing.properties
+      - name: Create signing properties
+        run: |
+          echo "storeFile=android.keystore" > keystore.properties
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> keystore.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> keystore.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> keystore.properties
+
+      # 6️⃣ Build Release APK
+      - name: Build Signed APK
+        run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=android.keystore \
+          -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
+          -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
+          -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+
+      # 7️⃣ تحقق من الملفات الناتجة
+      - name: List APK folder
+        run: ls -R app/build/outputs/apk/release
+
+      # 8️⃣ رفع APK
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-apk
+          path: app/build/outputs/apk/release/*.apk
