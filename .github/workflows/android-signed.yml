@@ -11,47 +11,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ استنساخ المشروع
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ إعداد JDK 17
+      # 2️⃣ Setup JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: 17
 
-      # 3️⃣ إعطاء صلاحية تنفيذ gradlew
+      # 3️⃣ Make gradlew executable
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      # 4️⃣ فك keystore من Secret
+      # 4️⃣ Create keystore in app/ folder (مسار صحيح لـ Gradle)
       - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android.keystore
+        run: mkdir -p app && echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/android.keystore
 
-      # 5️⃣ إنشاء ملف signing.properties (اختياري لكن يساعد Gradle)
-      - name: Create signing properties
-        run: |
-          echo "storeFile=android.keystore" > keystore.properties
-          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> keystore.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> keystore.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> keystore.properties
-
-      # 6️⃣ Build Signed Release APK (بدون مسافات خاطئة)
+      # 5️⃣ Build Signed APK
       - name: Build Signed APK
         run: |
           ./gradlew assembleRelease \
-            -Pandroid.injected.signing.store.file=android.keystore \
+            -Pandroid.injected.signing.store.file=app/android.keystore \
             -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
             -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
             -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
 
-      # 7️⃣ التحقق من الملفات الناتجة
+      # 6️⃣ List APK folder
       - name: List APK folder
         run: ls -R app/build/outputs/apk/release
 
-      # 8️⃣ رفع APK الناتج
+      # 7️⃣ Upload APK
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
